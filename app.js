@@ -15,14 +15,28 @@ var users = require('./routes/users');
 var dishRouter = require('./routes/dishRouter');
 var leaderRouter = require('./routes/leaderRouter ');
 var promoRouter = require('./routes/promoRouter');
+var favoriteRouter = require('./routes/favoriteRouter');
+
 const mongoose = require('mongoose');
 mongoose.Promise = require('bluebird');
 
+const uploadRouter = require('./routes/uploadRouter');
 const Dishes = require('./models/dishes');
 
 const url = config.mongoUrl;
 
 var app = express();
+
+// Secure traffic only
+app.all('*', (req, res, next) => {
+    if (req.secure) {
+      return next();
+    }
+    else {
+      res.redirect(307, 'https://' + req.hostname + ':' + app.get('secPort') + req.url);
+    }
+});
+  
 
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
@@ -39,13 +53,6 @@ app.use(passport.session());
 
 // app.use(cookieParser('12345-67890-09876-54321'));
 
-app.use(session({
-    name: 'session-id',
-    secret: '12345-67890-09876-54321',
-    saveUninitialized: false,
-    resave: false,
-    store: new FileStore()
-}));
  
 
 app.use('/', index);
@@ -63,10 +70,11 @@ connect.then((db) => {
     console.log("Connected correctly to server");
 }, (err) => { console.log(err); });
 
-
 app.use('/dishes', dishRouter);
 app.use('/leaders', leaderRouter);
 app.use('/promotions', promoRouter);
+app.use('/favorites', favoriteRouter);
+app.use('/imageUpload',uploadRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
